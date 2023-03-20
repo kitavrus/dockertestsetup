@@ -1,4 +1,4 @@
-module ep39
+module github.com/kitavrus/dockertestsetup
 
 go 1.19
 
