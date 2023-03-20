@@ -128,9 +128,9 @@ func (dts *DockerTestSetup) PostgresDockerUp() error {
 
 	pool.MaxWait = dts.Config.PoolMaxWait
 	if err = pool.Retry(func() error {
-		// dts.DB, err = sql.Open("postgres", dsn.String())
+		dts.DB, err = sql.Open("postgres", dsn.String())
 
-		dts.DB, err = sql.Open("pgx", dsn.String())
+		// dts.DB, err = sql.Open("pgx", dsn.String())
 		if err != nil {
 			return err
 		}
