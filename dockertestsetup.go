@@ -161,13 +161,12 @@ func (dts *DockerTestSetup) MigrateUp(path string) error {
 		return fmt.Errorf("couldn't migrate with instance: %w", err)
 	}
 
-	//fmt.Printf("%v \n", instance)
-
 	if len(path) == 0 {
 		path = dts.Config.PathToMigrate
 	}
 
 	m, err := migrate.NewWithDatabaseInstance("file://"+path, "postgres", instance)
+
 	// m, err := migrate.NewWithDatabaseInstance("file://"+dts.Config.PathToMigrate, "postgres", instance)
 	if err != nil {
 		return fmt.Errorf("couldn't migrate database instance: %w", err)
