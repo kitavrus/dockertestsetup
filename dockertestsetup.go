@@ -166,8 +166,8 @@ func (dts *DockerTestSetup) MigrateUp(path string) error {
 	}
 
 	m, err := migrate.NewWithDatabaseInstance("file://"+path, "postgres", instance)
-	
 	// m, err := migrate.NewWithDatabaseInstance("file://"+dts.Config.PathToMigrate, "postgres", instance)
+	
 	if err != nil {
 		return fmt.Errorf("couldn't migrate database instance: %w", err)
 	}
