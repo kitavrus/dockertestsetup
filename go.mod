@@ -1,4 +1,4 @@
-module github.com/kitavrus/dockertestsetup/v4
+module github.com/kitavrus/dockertestsetup/v5
 
 go 1.19
 
