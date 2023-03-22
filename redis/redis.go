@@ -6,6 +6,7 @@ import (
 	"github.com/kitavrus/dockertestsetup/v6"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
+	"github.com/redis/go-redis/v9"
 	"strconv"
 	"time"
 )

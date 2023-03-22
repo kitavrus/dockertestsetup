@@ -38,22 +38,6 @@ type DockerConfig interface {
 	Cleanup() error
 	HostPort() string
 	ContainerPortId() string
-
-	//SetName(string)
-	//SetRepository(string)
-	//SetTag(string)
-	//SetEnv([]string)
-	//SetCmd([]string)
-	//SetEntrypoint([]string)
-	//SetWorkingDir([]string)
-	//SetPortBindings(map[docker.Port][]docker.PortBinding)
-	//SetAutoRemove(bool)
-	//SetRestartPolicy(docker.RestartPolicy)
-	//SetResourceExpire(uint)
-	//SetPoolMaxWait(time.Duration)
-	//SetCleanup(func() error)
-	//SetHostPort(string)
-	//SetContainerPortId(string)
 }
 
 type CustomConfig interface{}
