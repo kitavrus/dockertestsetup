@@ -27,9 +27,9 @@ type DockerConfig interface {
 	Cmd() []string
 	Entrypoint() []string
 	WorkingDir() []string
-	PortBindings() map[docker.Port][]docker.PortBinding // TODO Течь?
+	PortBindings() map[docker.Port][]docker.PortBinding
 	AutoRemove() bool
-	RestartPolicy() docker.RestartPolicy // TODO  Течь?
+	RestartPolicy() docker.RestartPolicy
 	ResourceExpire() uint
 	PoolMaxWait() time.Duration
 	Cleanup() error

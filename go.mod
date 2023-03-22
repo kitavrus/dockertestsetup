@@ -3,10 +3,11 @@ module github.com/kitavrus/dockertestsetup/v6
 go 1.19
 
 require (
-	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/golang-migrate/migrate/v4 v4.15.2
+	github.com/kitavrus/dockertestsetup/v5 v5.0.0-20230321085436-7083a253d993
 	github.com/lib/pq v1.10.2
 	github.com/ory/dockertest v3.3.5+incompatible
+	github.com/redis/go-redis/v9 v9.0.2
 )
 
 require (
@@ -19,14 +20,12 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/opencontainers/runc v1.1.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/redis/go-redis/v9 v9.0.2 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/net v0.6.0 // indirect
