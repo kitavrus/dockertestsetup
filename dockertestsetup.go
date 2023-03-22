@@ -1,15 +1,63 @@
 package dockertestsetup
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/ory/dockertest/docker"
+	"time"
+)
 
-type Countainer interface {
+type Options func(Config)
+
+type Container interface {
 	Up() Resource
+	Config
 }
 
 type Resource interface {
 	GetName() string
 	GetError() error
 	Cleanup() error
+}
+
+type DockerConfig interface {
+	Name() string
+	Repository() string
+	Tag() string
+	Env() []string
+	Cmd() []string
+	Entrypoint() []string
+	WorkingDir() []string
+	PortBindings() map[docker.Port][]docker.PortBinding // TODO Течь?
+	AutoRemove() bool
+	RestartPolicy() docker.RestartPolicy // TODO  Течь?
+	ResourceExpire() uint
+	PoolMaxWait() time.Duration
+	Cleanup() error
+	HostPort() string
+	ContainerPortId() string
+
+	SetName(string)
+	SetRepository(string)
+	SetTag(string)
+	SetEnv([]string)
+	SetCmd([]string)
+	SetEntrypoint([]string)
+	SetWorkingDir([]string)
+	SetPortBindings(map[docker.Port][]docker.PortBinding)
+	SetAutoRemove(bool)
+	SetRestartPolicy(docker.RestartPolicy)
+	SetResourceExpire(uint)
+	SetPoolMaxWait(time.Duration)
+	SetCleanup(func() error)
+	SetHostPort(string)
+	SetContainerPortId(string)
+}
+
+type CustomConfig interface{}
+
+type Config interface {
+	DockerConfig
+	CustomConfig
 }
 
 type DockerTestUpper struct {
@@ -33,7 +81,7 @@ func (dtu *DockerTestUpper) addResource(r Resource) {
 	dtu.Resources[r.GetName()] = r
 }
 
-func New(conts ...Countainer) *DockerTestUpper { // ?
+func New(conts ...Container) *DockerTestUpper { // ?
 	dtu := &DockerTestUpper{
 		Resources: make(map[string]Resource, 10),
 	}
