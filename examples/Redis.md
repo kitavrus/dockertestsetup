@@ -21,7 +21,7 @@ func Test_Main(m *testing.M) {
 	//containerPortId = "6379/tpc"
 
 	// Меняем image  и tag для контейнера
-	//redisContainer := redis.NewWithConfig(dockertestupper.CfgRepository("redis", "3"))
+	//redisContainer := redis.NewWithConfig(dockertestsetup.CfgRepository("redis", "3"))
 
 	redisContainer := redis.New()
 	dtu := dockertestupper.New(redisContainer)

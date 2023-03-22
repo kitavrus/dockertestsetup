@@ -120,47 +120,98 @@ func (c *DockerConfigImpl) ContainerPortId() string {
 	return c.containerPortId
 }
 
+func (c *DockerConfigImpl) SetName(n string) {
+	c.name = n
+}
+func (c *DockerConfigImpl) SetRepository(r string) {
+	c.repository = r
+}
+func (c *DockerConfigImpl) SetTag(t string) {
+	c.tag = t
+}
+func (c *DockerConfigImpl) SetEnv(e []string) {
+	c.env = e
+}
+func (c *DockerConfigImpl) SetPortBindings(p map[docker.Port][]docker.PortBinding) {
+	c.portBindings = p
+}
+func (c *DockerConfigImpl) SetAutoRemove(a bool) {
+	c.autoRemove = a
+}
+func (c *DockerConfigImpl) SetRestartPolicy(r docker.RestartPolicy) {
+	c.restartPolicy = r
+}
+func (c *DockerConfigImpl) SetResourceExpire(r uint) {
+	c.resourceExpire = r
+}
+func (c *DockerConfigImpl) SetPoolMaxWait(p time.Duration) {
+	c.poolMaxWait = p
+}
+func (c *DockerConfigImpl) SetCleanup(f func() error) {
+	c.cleanup = f
+}
+
+func (c *DockerConfigImpl) SetHostPort(p string) {
+	c.hostPort = p
+}
+
+func (c *DockerConfigImpl) SetContainerPortId(p string) {
+	c.containerPortId = p
+}
+
+func (c *DockerConfigImpl) SetCmd(cmd []string) {
+	c.cmd = cmd
+}
+
+func (c *DockerConfigImpl) SetEntrypoint(e []string) {
+	c.entrypoint = e
+}
+
+func (c *DockerConfigImpl) SetWorkingDir(w []string) {
+	c.workingDir = w
+}
+
 func CfgRepository(repo string, tag string) Options {
 	return func(c Config) {
-		c.(*DockerConfigImpl).repository = repo
-		c.(*DockerConfigImpl).tag = tag
+		c.SetRepository(repo)
+		c.SetTag(tag)
 	}
 }
 
 func CfgSetName(name string) Options {
 	return func(c Config) {
-
+		//c.SetName(name)
 		c.(*DockerConfigImpl).name = name
 	}
 }
 
 func CfgEnv(env []string) Options {
 	return func(c Config) {
-		c.(*DockerConfigImpl).env = env
+		c.SetEnv(env)
 	}
 }
 
 func CfgResourceExpire(re uint) Options {
 	return func(c Config) {
-		c.(*DockerConfigImpl).resourceExpire = re
+		c.SetResourceExpire(re)
 	}
 }
 
 func CfgPoolMaxWait(pmw time.Duration) Options {
 	return func(c Config) {
-		c.(*DockerConfigImpl).poolMaxWait = pmw
+		c.SetPoolMaxWait(pmw)
 	}
 }
 
 func CfgCleanup(f func() error) Options {
 	return func(c Config) {
-		c.(*DockerConfigImpl).cleanup = f
+		c.SetCleanup(f)
 	}
 }
 
 func CfgPortBindings(pb map[docker.Port][]docker.PortBinding) Options {
 	return func(c Config) {
-		c.(*DockerConfigImpl).portBindings = pb
+		c.SetPortBindings(pb)
 	}
 }
 

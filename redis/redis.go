@@ -3,7 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
-	"github.com/kitavrus/dockertestsetup/v6"
+	dockertestsetup "github.com/kitavrus/dockertestsetup/v6"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
 	"github.com/redis/go-redis/v9"
@@ -112,6 +112,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		Name:     con.Name(),
 		DB:       db,
 		resource: resource,
+		pool:     pool,
 		cleanup:  con.Cleanup,
 		error:    nil,
 	}
