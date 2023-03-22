@@ -113,14 +113,14 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		con.resourceWithError(fmt.Errorf("failed to create minio client: %w", err))
 	}
 
-	con.Config.SetCleanup(func() error {
+	con.Config.(*config).cleanup = func() error {
 		if resource != nil {
 			if err := pool.Purge(resource); err != nil {
 				return fmt.Errorf("Couldn't purge container: %w", err)
 			}
 		}
 		return nil
-	})
+	}
 
 	return &Resource{
 		Name:     con.Name(),
@@ -159,49 +159,6 @@ func (r *Resource) Resource() *dockertest.Resource {
 func (r *Resource) Pool() *dockertest.Pool {
 	return r.pool
 }
-
-//
-//func Repository(repo, tag string) dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//		c.SetRepository(repo)
-//		c.SetTag(tag)
-//	}
-//}
-//
-//func Empty() dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//	}
-//}
-//
-//func SetName(name string) dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//		c.SetName(name)
-//	}
-//}
-//
-//func Env(env []string) dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//		c.SetEnv(env)
-//	}
-//}
-//
-//func ResourceExpire(re uint) dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//		c.SetResourceExpire(re)
-//	}
-//}
-//
-//func PoolMaxWait(pmw time.Duration) dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//		c.SetPoolMaxWait(pmw)
-//	}
-//}
-//
-//func Cleanup(f func() error) dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//		c.SetCleanup(f)
-//	}
-//}
 
 func AccessSecretKey(acc, sec string) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {

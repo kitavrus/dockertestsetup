@@ -2,6 +2,7 @@ package dockertestsetup
 
 import (
 	"fmt"
+	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
 	"time"
 )
@@ -17,6 +18,8 @@ type Resource interface {
 	GetName() string
 	GetError() error
 	Cleanup() error
+	Resource() *dockertest.Resource
+	Pool() *dockertest.Pool
 }
 
 type DockerConfig interface {
@@ -36,21 +39,21 @@ type DockerConfig interface {
 	HostPort() string
 	ContainerPortId() string
 
-	SetName(string)
-	SetRepository(string)
-	SetTag(string)
-	SetEnv([]string)
-	SetCmd([]string)
-	SetEntrypoint([]string)
-	SetWorkingDir([]string)
-	SetPortBindings(map[docker.Port][]docker.PortBinding)
-	SetAutoRemove(bool)
-	SetRestartPolicy(docker.RestartPolicy)
-	SetResourceExpire(uint)
-	SetPoolMaxWait(time.Duration)
-	SetCleanup(func() error)
-	SetHostPort(string)
-	SetContainerPortId(string)
+	//SetName(string)
+	//SetRepository(string)
+	//SetTag(string)
+	//SetEnv([]string)
+	//SetCmd([]string)
+	//SetEntrypoint([]string)
+	//SetWorkingDir([]string)
+	//SetPortBindings(map[docker.Port][]docker.PortBinding)
+	//SetAutoRemove(bool)
+	//SetRestartPolicy(docker.RestartPolicy)
+	//SetResourceExpire(uint)
+	//SetPoolMaxWait(time.Duration)
+	//SetCleanup(func() error)
+	//SetHostPort(string)
+	//SetContainerPortId(string)
 }
 
 type CustomConfig interface{}

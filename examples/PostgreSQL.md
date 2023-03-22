@@ -22,13 +22,13 @@ func Test_Main(m *testing.M) {
 	//pathToMigrate   = "db/migrations/"
 
 	// Меняем image  и tag для контейнера
-	//pgContainer := postgres.NewWithConfig(postgres.Repository("postgres", "15"), postgres.Empty())
+	//pgContainer := postgres.NewWithConfig(dockertestupper.CfgRepository("postgres", "15"))
 
 	// создаем Docker Postgres и применям миграции из  нами указанно пути
-	//pgContainer := postgres.NewWithConfig(postgres.MigrateConfig("db/postgres/migrations/"))
+	//pgContainer := postgres.NewWithConfig(postgres.CfgMigrateConfig("db/postgres/migrations/"))
 
 	// создаем Docker Postgres и применям миграции из стандартного пути  
-	// pgContainer := postgres.NewWithConfig(postgres.Migrate())
+	// pgContainer := postgres.NewWithConfig(postgres.CfgMigrate())
 
 	pgContainer := postgres.New()
 	dtu := dockertestupper.New(pgContainer)

@@ -6,7 +6,6 @@ import (
 	"github.com/kitavrus/dockertestsetup/v6"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
-	"github.com/redis/go-redis/v9"
 	"strconv"
 	"time"
 )
@@ -98,7 +97,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		con.resourceWithError(fmt.Errorf("could not connect to redis: %s", err))
 	}
 
-	con.Config.SetCleanup(func() error {
+	con.Config.(*config).cleanup = func() error {
 		if resource != nil {
 			if err := pool.Purge(resource); err != nil {
 				return fmt.Errorf("Couldn't purge container: %w", err)
@@ -106,7 +105,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		}
 
 		return nil
-	})
+	}
 
 	return &Resource{
 		Name:     con.Name(),
@@ -146,56 +145,13 @@ func (r *Resource) Pool() *dockertest.Pool {
 	return r.pool
 }
 
-//func Repository(repo string, tag string) dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//		c.SetRepository(repo)
-//		c.SetTag(tag)
-//	}
-//}
-
-//func Empty() dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//	}
-//}
-
-//
-//func SetName(name string) dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//		c.SetName(name)
-//	}
-//}
-//
-//func Env(env []string) dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//		c.SetEnv(env)
-//	}
-//}
-//
-//func ResourceExpire(re uint) dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//		c.SetResourceExpire(re)
-//	}
-//}
-//
-//func PoolMaxWait(pmw time.Duration) dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//		c.SetPoolMaxWait(pmw)
-//	}
-//}
-//
-//func Cleanup(f func() error) dockertestsetup.Options {
-//	return func(c dockertestsetup.Config) {
-//		c.SetCleanup(f)
-//	}
-//}
-
-func RedisPassword(p string) dockertestsetup.Options {
+func CfgRedisPassword(p string) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
 		c.(*config).redisPassword = p
 	}
 }
 
-func RedisDb(db uint) dockertestsetup.Options {
+func CfgRedisDb(db uint) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
 		c.(*config).redisDB = db
 	}

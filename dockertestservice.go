@@ -19,7 +19,7 @@ func NewDockerConfig(
 	resourceExpire uint,
 	poolMaxWait time.Duration,
 	restartPolicy docker.RestartPolicy,
-	portBinding map[docker.Port][]docker.PortBinding,
+	portBindings map[docker.Port][]docker.PortBinding,
 	cleanup func() error,
 	hostPort string,
 	containerPortId string,
@@ -37,7 +37,7 @@ func NewDockerConfig(
 		resourceExpire:  resourceExpire,
 		poolMaxWait:     poolMaxWait,
 		restartPolicy:   restartPolicy,
-		portBinding:     portBinding,
+		portBindings:    portBindings,
 		cleanup:         cleanup,
 		hostPort:        hostPort,
 		containerPortId: containerPortId,
@@ -54,7 +54,7 @@ type DockerConfigImpl struct {
 	workingDir      []string
 	autoRemove      bool
 	restartPolicy   docker.RestartPolicy
-	portBinding     map[docker.Port][]docker.PortBinding
+	portBindings    map[docker.Port][]docker.PortBinding
 	resourceExpire  uint
 	poolMaxWait     time.Duration
 	cleanup         func() error
@@ -106,7 +106,7 @@ func (c *DockerConfigImpl) PoolMaxWait() time.Duration {
 	return c.poolMaxWait
 }
 func (c *DockerConfigImpl) PortBindings() map[docker.Port][]docker.PortBinding {
-	return c.portBinding
+	return c.portBindings
 }
 func (c *DockerConfigImpl) Cleanup() error {
 	return c.cleanup()
@@ -120,98 +120,47 @@ func (c *DockerConfigImpl) ContainerPortId() string {
 	return c.containerPortId
 }
 
-func (c *DockerConfigImpl) SetName(n string) {
-	c.name = n
-}
-func (c *DockerConfigImpl) SetRepository(r string) {
-	c.repository = r
-}
-func (c *DockerConfigImpl) SetTag(t string) {
-	c.tag = t
-}
-func (c *DockerConfigImpl) SetEnv(e []string) {
-	c.env = e
-}
-func (c *DockerConfigImpl) SetPortBindings(p map[docker.Port][]docker.PortBinding) {
-	c.portBinding = p
-}
-func (c *DockerConfigImpl) SetAutoRemove(a bool) {
-	c.autoRemove = a
-}
-func (c *DockerConfigImpl) SetRestartPolicy(r docker.RestartPolicy) {
-	c.restartPolicy = r
-}
-func (c *DockerConfigImpl) SetResourceExpire(r uint) {
-	c.resourceExpire = r
-}
-func (c *DockerConfigImpl) SetPoolMaxWait(p time.Duration) {
-	c.poolMaxWait = p
-}
-func (c *DockerConfigImpl) SetCleanup(f func() error) {
-	c.cleanup = f
-}
-
-func (c *DockerConfigImpl) SetHostPort(p string) {
-	c.hostPort = p
-}
-
-func (c *DockerConfigImpl) SetContainerPortId(p string) {
-	c.containerPortId = p
-}
-
-func (c *DockerConfigImpl) SetCmd(cmd []string) {
-	c.cmd = cmd
-}
-
-func (c *DockerConfigImpl) SetEntrypoint(e []string) {
-	c.entrypoint = e
-}
-
-func (c *DockerConfigImpl) SetWorkingDir(w []string) {
-	c.workingDir = w
-}
-
-func Repository(repo string, tag string) Options {
+func CfgRepository(repo string, tag string) Options {
 	return func(c Config) {
-		c.SetRepository(repo)
-		c.SetTag(tag)
+		c.(*DockerConfigImpl).repository = repo
+		c.(*DockerConfigImpl).tag = tag
 	}
 }
 
-func SetName(name string) Options {
+func CfgSetName(name string) Options {
 	return func(c Config) {
-		//c.SetName(name)
+
 		c.(*DockerConfigImpl).name = name
 	}
 }
 
-func Env(env []string) Options {
+func CfgEnv(env []string) Options {
 	return func(c Config) {
-		c.SetEnv(env)
+		c.(*DockerConfigImpl).env = env
 	}
 }
 
-func ResourceExpire(re uint) Options {
+func CfgResourceExpire(re uint) Options {
 	return func(c Config) {
-		c.SetResourceExpire(re)
+		c.(*DockerConfigImpl).resourceExpire = re
 	}
 }
 
-func PoolMaxWait(pmw time.Duration) Options {
+func CfgPoolMaxWait(pmw time.Duration) Options {
 	return func(c Config) {
-		c.SetPoolMaxWait(pmw)
+		c.(*DockerConfigImpl).poolMaxWait = pmw
 	}
 }
 
-func Cleanup(f func() error) Options {
+func CfgCleanup(f func() error) Options {
 	return func(c Config) {
-		c.SetCleanup(f)
+		c.(*DockerConfigImpl).cleanup = f
 	}
 }
 
-func PortBindings(pb map[docker.Port][]docker.PortBinding) Options {
+func CfgPortBindings(pb map[docker.Port][]docker.PortBinding) Options {
 	return func(c Config) {
-		c.SetPortBindings(pb)
+		c.(*DockerConfigImpl).portBindings = pb
 	}
 }
 
