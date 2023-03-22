@@ -171,6 +171,50 @@ func (c *DockerConfigImpl) SetWorkingDir(w []string) {
 	c.workingDir = w
 }
 
+func Repository(repo string, tag string) Options {
+	return func(c Config) {
+		c.SetRepository(repo)
+		c.SetTag(tag)
+	}
+}
+
+func SetName(name string) Options {
+	return func(c Config) {
+		//c.SetName(name)
+		c.(*DockerConfigImpl).name = name
+	}
+}
+
+func Env(env []string) Options {
+	return func(c Config) {
+		c.SetEnv(env)
+	}
+}
+
+func ResourceExpire(re uint) Options {
+	return func(c Config) {
+		c.SetResourceExpire(re)
+	}
+}
+
+func PoolMaxWait(pmw time.Duration) Options {
+	return func(c Config) {
+		c.SetPoolMaxWait(pmw)
+	}
+}
+
+func Cleanup(f func() error) Options {
+	return func(c Config) {
+		c.SetCleanup(f)
+	}
+}
+
+func PortBindings(pb map[docker.Port][]docker.PortBinding) Options {
+	return func(c Config) {
+		c.SetPortBindings(pb)
+	}
+}
+
 type Service struct {
 }
 

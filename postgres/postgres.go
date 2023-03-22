@@ -198,54 +198,54 @@ func (r *Resource) Pool() *dockertest.Pool {
 	return r.pool
 }
 
-func Repository(repo string, tag string) dockertestsetup.Options {
-	return func(c dockertestsetup.Config) {
-		c.SetRepository(repo)
-		c.SetTag(tag)
-	}
-}
+//func Repository(repo string, tag string) dockertestsetup.Options {
+//	return func(c dockertestsetup.Config) {
+//		c.SetRepository(repo)
+//		c.SetTag(tag)
+//	}
+//}
 
-func Empty() dockertestsetup.Options {
-	return func(c dockertestsetup.Config) {
-	}
-}
+//func Empty() dockertestsetup.Options {
+//	return func(c dockertestsetup.Config) {
+//	}
+//}
 
-func SetName(name string) dockertestsetup.Options {
-	return func(c dockertestsetup.Config) {
-		c.SetName(name)
-	}
-}
-
-func Env(env []string) dockertestsetup.Options {
-	return func(c dockertestsetup.Config) {
-		c.SetEnv(env)
-	}
-}
-
-func ResourceExpire(re uint) dockertestsetup.Options {
-	return func(c dockertestsetup.Config) {
-		c.SetResourceExpire(re)
-	}
-}
-
-func PoolMaxWait(pmw time.Duration) dockertestsetup.Options {
-	return func(c dockertestsetup.Config) {
-		c.SetPoolMaxWait(pmw)
-	}
-}
-
-func Cleanup(f func() error) dockertestsetup.Options {
-	return func(c dockertestsetup.Config) {
-		c.SetCleanup(f)
-	}
-}
-
-func PortBindings(pb map[docker.Port][]docker.PortBinding) dockertestsetup.Options {
-	return func(c dockertestsetup.Config) {
-		//c.(*config).DockerConfig.SetPortBindings(pb)
-		c.SetPortBindings(pb)
-	}
-}
+//func SetName(name string) dockertestsetup.Options {
+//	return func(c dockertestsetup.Config) {
+//		c.SetName(name)
+//	}
+//}
+//
+//func Env(env []string) dockertestsetup.Options {
+//	return func(c dockertestsetup.Config) {
+//		c.SetEnv(env)
+//	}
+//}
+//
+//func ResourceExpire(re uint) dockertestsetup.Options {
+//	return func(c dockertestsetup.Config) {
+//		c.SetResourceExpire(re)
+//	}
+//}
+//
+//func PoolMaxWait(pmw time.Duration) dockertestsetup.Options {
+//	return func(c dockertestsetup.Config) {
+//		c.SetPoolMaxWait(pmw)
+//	}
+//}
+//
+//func Cleanup(f func() error) dockertestsetup.Options {
+//	return func(c dockertestsetup.Config) {
+//		c.SetCleanup(f)
+//	}
+//}
+//
+//func PortBindings(pb map[docker.Port][]docker.PortBinding) dockertestsetup.Options {
+//	return func(c dockertestsetup.Config) {
+//		//c.(*config).DockerConfig.SetPortBindings(pb)
+//		c.SetPortBindings(pb)
+//	}
+//}
 
 func PgUser(u string) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {

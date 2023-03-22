@@ -1,33 +1,34 @@
-package redis
+package minio
 
 import (
-	"context"
 	"fmt"
 	"github.com/kitavrus/dockertestsetup/v6"
+	minio "github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
-	"github.com/redis/go-redis/v9"
-	"strconv"
+	"net/http"
 	"time"
 )
 
 func newDefaultConfig() dockertestsetup.Config {
 	const (
-		name            = "redis"
-		repository      = "redis"
-		tag             = "3.2"
-		redisPassword   = ""
-		redisDb         = "0"
-		hostPort        = "6380"
-		containerPortId = "6379/tpc"
+		name            = "minio"
+		repository      = "minio/minio"
+		tag             = "latest"
+		accessKey       = "MYACCESSKEY"
+		secretKey       = "MYSECRETKEY"
+		hostPort        = "9000"
+		containerPortId = "9000/tpc"
 	)
 
 	dockerConfig := dockertestsetup.NewDockerConfig(
 		name,
 		repository,
 		tag,
-		nil,
-		nil,
+		[]string{"MINIO_ACCESS_KEY=" + accessKey, "MINIO_SECRET_KEY=" + secretKey},
+		[]string{"server", "/data"},
 		nil,
 		nil,
 		true,
@@ -44,12 +45,10 @@ func newDefaultConfig() dockertestsetup.Config {
 		containerPortId,
 	)
 
-	db, _ := strconv.Atoi(redisDb)
-
 	return &config{
-		DockerConfig:  dockerConfig,
-		redisPassword: redisPassword,
-		redisDB:       uint(db),
+		DockerConfig: dockerConfig,
+		accessKey:    accessKey,
+		secretKey:    secretKey,
 	}
 }
 
@@ -76,9 +75,6 @@ type ContainerImpl struct {
 
 func (con *ContainerImpl) Up() dockertestsetup.Resource {
 
-	var db *redis.Client
-	ctx := context.Background()
-
 	ds := dockertestsetup.Service{}
 	resource, pool, err := ds.Connect(con.Config)
 	if err != nil {
@@ -87,15 +83,34 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 
 	resource.Expire(con.Config.ResourceExpire())
 
-	pool.MaxWait = con.Config.PoolMaxWait()
-	if err = pool.Retry(func() error {
-		db = redis.NewClient(&redis.Options{
-			Addr: fmt.Sprintf("localhost:%s", resource.GetPort(con.Config.ContainerPortId())),
-		})
+	endpoint := fmt.Sprintf("localhost:%s", resource.GetPort(con.Config.ContainerPortId()))
+	// or you could use the following, because we mapped the port 9000 to the port 9000 on the host
+	// endpoint := "localhost:9000"
 
-		return db.Ping(ctx).Err()
+	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
+	// the minio client does not do service discovery for you (i.e. it does not check if connection can be established), so we have to use the health check
+	if err := pool.Retry(func() error {
+		url := fmt.Sprintf("http://%s/minio/health/live", endpoint)
+		resp, err := http.Get(url)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("status code not OK")
+		}
+		return nil
 	}); err != nil {
-		con.resourceWithError(fmt.Errorf("could not connect to redis: %s", err))
+		con.resourceWithError(fmt.Errorf("could not connect to minio: %s", err))
+	}
+
+	// now we can instantiate minio client
+	minioClient, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4("MYACCESSKEY", "MYSECRETKEY", ""),
+		Secure: false,
+	})
+
+	if err != nil {
+		con.resourceWithError(fmt.Errorf("failed to create minio client: %w", err))
 	}
 
 	con.Config.SetCleanup(func() error {
@@ -104,13 +119,12 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 				return fmt.Errorf("Couldn't purge container: %w", err)
 			}
 		}
-
 		return nil
 	})
 
 	return &Resource{
 		Name:     con.Name(),
-		DB:       db,
+		DB:       minioClient,
 		resource: resource,
 		cleanup:  con.Cleanup,
 		error:    nil,
@@ -119,7 +133,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 
 type Resource struct {
 	Name     string
-	DB       *redis.Client
+	DB       *minio.Client
 	resource *dockertest.Resource
 	pool     *dockertest.Pool
 	cleanup  func() error
@@ -146,18 +160,18 @@ func (r *Resource) Pool() *dockertest.Pool {
 	return r.pool
 }
 
-//func Repository(repo string, tag string) dockertestsetup.Options {
+//
+//func Repository(repo, tag string) dockertestsetup.Options {
 //	return func(c dockertestsetup.Config) {
 //		c.SetRepository(repo)
 //		c.SetTag(tag)
 //	}
 //}
-
+//
 //func Empty() dockertestsetup.Options {
 //	return func(c dockertestsetup.Config) {
 //	}
 //}
-
 //
 //func SetName(name string) dockertestsetup.Options {
 //	return func(c dockertestsetup.Config) {
@@ -189,15 +203,10 @@ func (r *Resource) Pool() *dockertest.Pool {
 //	}
 //}
 
-func RedisPassword(p string) dockertestsetup.Options {
+func AccessSecretKey(acc, sec string) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
-		c.(*config).redisPassword = p
-	}
-}
-
-func RedisDb(db uint) dockertestsetup.Options {
-	return func(c dockertestsetup.Config) {
-		c.(*config).redisDB = db
+		c.(*config).accessKey = acc
+		c.(*config).secretKey = sec
 	}
 }
 
@@ -212,7 +221,7 @@ func (con *ContainerImpl) resourceWithError(err error) dockertestsetup.Resource 
 type config struct {
 	dockertestsetup.DockerConfig
 	dockertestsetup.CustomConfig
-	redisPassword string
-	redisDB       uint
-	cleanup       func() error
+	accessKey string
+	secretKey string
+	cleanup   func() error
 }
