@@ -3,13 +3,12 @@ package redis
 import (
 	"context"
 	"fmt"
-	"github.com/kitavrus/dockertestsetup/v5"
+	"github.com/kitavrus/dockertestsetup/v6"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
+	"github.com/redis/go-redis/v9"
 	"strconv"
 	"time"
-
-	"github.com/redis/go-redis/v9"
 )
 
 func newDefaultConfig() dockertestsetup.Config {
