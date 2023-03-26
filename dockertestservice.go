@@ -2,8 +2,8 @@ package dockertestsetup
 
 import (
 	"fmt"
-	"github.com/ory/dockertest"
-	"github.com/ory/dockertest/docker"
+	dockertest "github.com/ory/dockertest/v3"
+	docker "github.com/ory/dockertest/v3/docker"
 	"time"
 )
 
@@ -180,8 +180,7 @@ func CfgRepository(repo string, tag string) Options {
 
 func CfgSetName(name string) Options {
 	return func(c Config) {
-		//c.SetName(name)
-		c.(*DockerConfigImpl).name = name
+		c.SetName(name)
 	}
 }
 
@@ -215,39 +214,38 @@ func CfgPortBindings(pb map[docker.Port][]docker.PortBinding) Options {
 	}
 }
 
-//type Service struct {
-//}
-//func (dtf *Service) Connect(c DockerConfig) (*dockertest.Resource, *dockertest.Pool, error) {
-
 func (c *DockerConfigImpl) Connect() (*dockertest.Resource, *dockertest.Pool, error) {
-	// uses a sensible default on windows (tcp/http) and linux/osx (socket)
+
 	pool, err := dockertest.NewPool("")
 
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not create docker pool: %w", err)
 	}
 
-	// uses pool to try to connect to Docker
 	err = pool.Client.Ping()
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not connect to Docker: %w", err)
 	}
 
-	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Name:         c.Name(),
-		Repository:   c.Repository(),
-		Tag:          c.Tag(),
-		Env:          c.Env(),
-		Cmd:          c.Cmd(),
-		Entrypoint:   c.Entrypoint(),
-		PortBindings: c.PortBindings(),
-	}, func(config *docker.HostConfig) {
-		config.AutoRemove = c.AutoRemove()
-		config.RestartPolicy = c.RestartPolicy()
-	})
+	resource, isRunning := pool.ContainerByName(c.Name())
 
-	if err != nil {
-		return nil, nil, fmt.Errorf("couldn't start resource: %w", err)
+	if !isRunning {
+		resource, err = pool.RunWithOptions(&dockertest.RunOptions{
+			Name:         c.Name(),
+			Repository:   c.Repository(),
+			Tag:          c.Tag(),
+			Env:          c.Env(),
+			Cmd:          c.Cmd(),
+			Entrypoint:   c.Entrypoint(),
+			PortBindings: c.PortBindings(),
+		}, func(config *docker.HostConfig) {
+			config.AutoRemove = c.AutoRemove()
+			config.RestartPolicy = c.RestartPolicy()
+		})
+
+		if err != nil {
+			return nil, nil, fmt.Errorf("couldn't start resource: %w", err)
+		}
 	}
 
 	return resource, pool, nil

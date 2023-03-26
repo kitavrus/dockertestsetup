@@ -2,8 +2,8 @@ package dockertestsetup
 
 import (
 	"fmt"
-	"github.com/ory/dockertest"
-	"github.com/ory/dockertest/docker"
+	dockertest "github.com/ory/dockertest/v3"
+	docker "github.com/ory/dockertest/v3/docker"
 	"time"
 )
 
@@ -59,11 +59,8 @@ type DockerConfig interface {
 	SetContainerPortId(string)
 }
 
-type CustomConfig interface{}
-
 type Config interface {
 	DockerConfig
-	CustomConfig
 }
 
 type DockerTestUpper struct {

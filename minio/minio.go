@@ -2,52 +2,25 @@ package minio
 
 import (
 	"fmt"
-	dockertestsetup "github.com/kitavrus/dockertestsetup/v6"
+	dockertestsetup "github.com/kitavrus/dockertestsetup"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 
-	"github.com/ory/dockertest"
-	"github.com/ory/dockertest/docker"
+	dockertest "github.com/ory/dockertest/v3"
+	docker "github.com/ory/dockertest/v3/docker"
 	"net/http"
 	"time"
 )
 
 func newDefaultConfig() dockertestsetup.Config {
 	const (
-		name            = "minio"
-		repository      = "minio/minio"
-		tag             = "latest"
-		accessKey       = "MYACCESSKEY"
-		secretKey       = "MYSECRETKEY"
-		token           = ""
-		hostPort        = "9000"
-		containerPortId = "9000/tpc"
+		accessKey = "MYACCESSKEY"
+		secretKey = "MYSECRETKEY"
+		token     = ""
 	)
 
-	dockerConfig := dockertestsetup.NewDockerConfig(
-		name,
-		repository,
-		tag,
-		[]string{"MINIO_ACCESS_KEY=" + accessKey, "MINIO_SECRET_KEY=" + secretKey},
-		[]string{"server", "/data"},
-		nil,
-		nil,
-		true,
-		60,
-		50*time.Second,
-		docker.RestartPolicy{
-			Name: "no",
-		},
-		map[docker.Port][]docker.PortBinding{
-			containerPortId: {{HostPort: hostPort}},
-		},
-		func() error { return nil },
-		hostPort,
-		containerPortId,
-	)
-
-	return &config{
-		DockerConfig: dockerConfig,
+	return &MinioConfig{
+		DockerConfig: &dockertestsetup.DockerConfigImpl{},
 		AccessKey:    accessKey,
 		SecretKey:    secretKey,
 		Token:        token,
@@ -56,6 +29,7 @@ func newDefaultConfig() dockertestsetup.Config {
 
 func New() dockertestsetup.Container {
 	c := newDefaultConfig()
+	c.(*MinioConfig).updateDockerConfig()
 	return &ContainerImpl{
 		Config: c,
 	}
@@ -66,6 +40,7 @@ func NewWithConfig(opts ...dockertestsetup.Options) dockertestsetup.Container {
 	for _, o := range opts {
 		o(c)
 	}
+	c.(*MinioConfig).updateDockerConfig()
 	return &ContainerImpl{
 		Config: c,
 	}
@@ -77,8 +52,11 @@ type ContainerImpl struct {
 
 func (con *ContainerImpl) Up() dockertestsetup.Resource {
 
-	ds := dockertestsetup.Service{}
-	resource, pool, err := ds.Connect(con.Config)
+	var (
+		minioConfig = con.Config.(*MinioConfig)
+	)
+
+	resource, pool, err := con.Connect()
 	if err != nil {
 		return con.resourceWithError(fmt.Errorf("%w", err))
 	}
@@ -110,7 +88,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 
 	// now we can instantiate minio client
 	minioClient, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(con.Config.(*config).AccessKey, con.Config.(*config).SecretKey, con.Config.(*config).Token),
+		Creds:  credentials.NewStaticV4(minioConfig.AccessKey, minioConfig.SecretKey, minioConfig.Token),
 		Secure: false,
 	})
 
@@ -118,7 +96,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		con.resourceWithError(fmt.Errorf("failed to create minio client: %w", err))
 	}
 
-	con.Config.(*config).cleanup = func() error {
+	minioConfig.cleanup = func() error {
 		if resource != nil {
 			if err := pool.Purge(resource); err != nil {
 				return fmt.Errorf("couldn't purge container: %w", err)
@@ -131,7 +109,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		Name:     con.Name(),
 		DB:       minioClient,
 		resource: resource,
-		cleanup:  con.Cleanup,
+		cleanup:  minioConfig.cleanup,
 		error:    nil,
 		config:   con.Config,
 	}
@@ -173,8 +151,8 @@ func (r *Resource) Config() dockertestsetup.Config {
 
 func AccessSecretKey(acc, sec string) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
-		c.(*config).AccessKey = acc
-		c.(*config).SecretKey = sec
+		c.(*MinioConfig).AccessKey = acc
+		c.(*MinioConfig).SecretKey = sec
 	}
 }
 
@@ -186,11 +164,136 @@ func (con *ContainerImpl) resourceWithError(err error) dockertestsetup.Resource 
 	}
 }
 
-type config struct {
+type MinioConfig struct {
 	dockertestsetup.DockerConfig
-	dockertestsetup.CustomConfig
 	AccessKey string
 	SecretKey string
 	Token     string
 	cleanup   func() error
+}
+
+func (c *MinioConfig) updateDockerConfig() {
+
+	var name = "minio"
+	if len(c.Name()) != 0 {
+		name = c.Name()
+	}
+
+	var repository = "minio/minio"
+	if len(c.Repository()) != 0 {
+		repository = c.Repository()
+	}
+
+	var tag = "latest"
+	if len(c.Tag()) != 0 {
+		tag = c.Tag()
+	}
+
+	var accessKey = "MYACCESSKEY"
+	if len(c.AccessKey) != 0 {
+		accessKey = c.AccessKey
+	}
+
+	var secretKey = "MYSECRETKEY"
+	if len(c.SecretKey) != 0 {
+		secretKey = c.SecretKey
+	}
+
+	var hostPort = "9000"
+	if len(c.HostPort()) != 0 {
+		hostPort = c.HostPort()
+	}
+
+	var containerPortId docker.Port = "9000/tcp"
+	if len(c.ContainerPortId()) != 0 {
+		containerPortId = docker.Port(c.ContainerPortId())
+	}
+
+	var env []string
+	if len(c.Env()) != 0 {
+		env = c.Env()
+	} else {
+		env = []string{"MINIO_ACCESS_KEY=" + accessKey, "MINIO_SECRET_KEY=" + secretKey}
+	}
+
+	var cmd []string
+	if len(c.Cmd()) != 0 {
+		cmd = c.Cmd()
+	} else {
+		cmd = []string{"server", "/data"}
+	}
+
+	var entrypoint []string
+	if len(c.Entrypoint()) != 0 {
+		entrypoint = c.Entrypoint()
+	}
+
+	var workingDir []string
+	if len(c.WorkingDir()) != 0 {
+		workingDir = c.WorkingDir()
+	}
+
+	var autoRemove bool
+	if c.AutoRemove() {
+		autoRemove = c.AutoRemove()
+	}
+
+	var resourceExpire uint
+	if c.ResourceExpire() > 0 {
+		resourceExpire = c.ResourceExpire()
+	} else {
+		resourceExpire = 60
+	}
+
+	var poolMaxWait time.Duration
+	if c.PoolMaxWait() > 0 {
+		poolMaxWait = c.PoolMaxWait()
+	} else {
+		poolMaxWait = 50 * time.Second
+	}
+
+	var restartPolicy docker.RestartPolicy
+	if c.RestartPolicy() != restartPolicy {
+		restartPolicy = c.RestartPolicy()
+	} else {
+		restartPolicy = docker.RestartPolicy{
+			Name: "no",
+		}
+	}
+
+	var portBindings map[docker.Port][]docker.PortBinding
+	if len(c.PortBindings()) != 0 {
+		portBindings = c.PortBindings()
+	} else {
+		portBindings = map[docker.Port][]docker.PortBinding{
+			containerPortId: {{HostPort: hostPort}},
+		}
+	}
+
+	var cleanup func() error
+	if c.cleanup != nil {
+		cleanup = c.cleanup
+	} else {
+		cleanup = func() error { return nil }
+	}
+
+	dockerConfig := dockertestsetup.NewDockerConfig(
+		name,
+		repository,
+		tag,
+		env,
+		cmd,
+		entrypoint,
+		workingDir,
+		autoRemove,
+		resourceExpire,
+		poolMaxWait,
+		restartPolicy,
+		portBindings,
+		cleanup,
+		hostPort,
+		string(containerPortId),
+	)
+
+	c.DockerConfig = dockerConfig
 }

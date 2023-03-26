@@ -3,9 +3,9 @@ package redis
 import (
 	"context"
 	"fmt"
-	dockertestsetup "github.com/kitavrus/dockertestsetup/v6"
-	"github.com/ory/dockertest"
-	"github.com/ory/dockertest/docker"
+	dockertestsetup "github.com/kitavrus/dockertestsetup"
+	dockertest "github.com/ory/dockertest/v3"
+	docker "github.com/ory/dockertest/v3/docker"
 	"github.com/redis/go-redis/v9"
 	"strconv"
 	"time"
@@ -13,41 +13,14 @@ import (
 
 func newDefaultConfig() dockertestsetup.Config {
 	const (
-		name            = "redis"
-		repository      = "redis"
-		tag             = "3.2"
-		redisPassword   = ""
-		redisDb         = "0"
-		hostPort        = "6380"
-		containerPortId = "6379/tpc"
-	)
-
-	dockerConfig := dockertestsetup.NewDockerConfig(
-		name,
-		repository,
-		tag,
-		nil,
-		nil,
-		nil,
-		nil,
-		true,
-		60,
-		50*time.Second,
-		docker.RestartPolicy{
-			Name: "no",
-		},
-		map[docker.Port][]docker.PortBinding{
-			containerPortId: {{HostPort: hostPort}},
-		},
-		func() error { return nil },
-		hostPort,
-		containerPortId,
+		redisPassword = ""
+		redisDb       = "0"
 	)
 
 	db, _ := strconv.Atoi(redisDb)
 
-	return &config{
-		DockerConfig:  dockerConfig,
+	return &RedisConfig{
+		DockerConfig:  &dockertestsetup.DockerConfigImpl{},
 		RedisPassword: redisPassword,
 		RedisDB:       uint(db),
 	}
@@ -55,6 +28,7 @@ func newDefaultConfig() dockertestsetup.Config {
 
 func New() dockertestsetup.Container {
 	c := newDefaultConfig()
+	c.(*RedisConfig).updateDockerConfig()
 	return &ContainerImpl{
 		Config: c,
 	}
@@ -65,6 +39,7 @@ func NewWithConfig(opts ...dockertestsetup.Options) dockertestsetup.Container {
 	for _, o := range opts {
 		o(c)
 	}
+	c.(*RedisConfig).updateDockerConfig()
 	return &ContainerImpl{
 		Config: c,
 	}
@@ -76,11 +51,13 @@ type ContainerImpl struct {
 
 func (con *ContainerImpl) Up() dockertestsetup.Resource {
 
-	var db *redis.Client
+	var (
+		db          *redis.Client
+		redisConfig = con.Config.(*RedisConfig)
+	)
 	ctx := context.Background()
 
-	ds := dockertestsetup.Service{}
-	resource, pool, err := ds.Connect(con.Config)
+	resource, pool, err := con.Config.Connect()
 	if err != nil {
 		return con.resourceWithError(fmt.Errorf("%w", err))
 	}
@@ -101,7 +78,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		con.resourceWithError(fmt.Errorf("could not connect to redis: %s", err))
 	}
 
-	con.Config.(*config).cleanup = func() error {
+	redisConfig.cleanup = func() error {
 		if resource != nil {
 			if err := pool.Purge(resource); err != nil {
 				return fmt.Errorf("Couldn't purge container: %w", err)
@@ -116,7 +93,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		DB:       db,
 		resource: resource,
 		pool:     pool,
-		cleanup:  con.Cleanup,
+		cleanup:  redisConfig.cleanup,
 		error:    nil,
 		config:   con.Config,
 	}
@@ -157,13 +134,13 @@ func (r *Resource) Config() dockertestsetup.Config {
 
 func CfgRedisPassword(p string) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
-		c.(*config).RedisPassword = p
+		c.(*RedisConfig).RedisPassword = p
 	}
 }
 
 func CfgRedisDb(db uint) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
-		c.(*config).RedisDB = db
+		c.(*RedisConfig).RedisDB = db
 	}
 }
 
@@ -175,10 +152,131 @@ func (con *ContainerImpl) resourceWithError(err error) dockertestsetup.Resource 
 	}
 }
 
-type config struct {
+type RedisConfig struct {
 	dockertestsetup.DockerConfig
-	dockertestsetup.CustomConfig
 	RedisPassword string
 	RedisDB       uint
 	cleanup       func() error
+}
+
+func (c *RedisConfig) updateDockerConfig() {
+
+	var name = "redis"
+	if len(c.Name()) != 0 {
+		name = c.Name()
+	}
+
+	var repository = "redis"
+	if len(c.Repository()) != 0 {
+		repository = c.Repository()
+	}
+
+	var tag = "3.2"
+	if len(c.Tag()) != 0 {
+		tag = c.Tag()
+	}
+
+	//var redisPassword = ""
+	//if len(c.RedisPassword) != 0 {
+	//	redisPassword = c.RedisPassword
+	//}
+	//
+	//var redisDb = 0
+	//if c.RedisDB != 0 {
+	//	redisDb = c.RedisDB
+	//}
+
+	var hostPort = "6380"
+	if len(c.HostPort()) != 0 {
+		hostPort = c.HostPort()
+	}
+
+	var containerPortId docker.Port = "6379/tcp"
+	if len(c.ContainerPortId()) != 0 {
+		containerPortId = docker.Port(c.ContainerPortId())
+	}
+
+	var env []string
+	if len(c.Env()) != 0 {
+		env = c.Env()
+	}
+
+	var cmd []string
+	if len(c.Cmd()) != 0 {
+		cmd = c.Cmd()
+	}
+
+	var entrypoint []string
+	if len(c.Entrypoint()) != 0 {
+		entrypoint = c.Entrypoint()
+	}
+
+	var workingDir []string
+	if len(c.WorkingDir()) != 0 {
+		workingDir = c.WorkingDir()
+	}
+
+	var autoRemove bool
+	if c.AutoRemove() {
+		autoRemove = c.AutoRemove()
+	}
+
+	var resourceExpire uint
+	if c.ResourceExpire() > 0 {
+		resourceExpire = c.ResourceExpire()
+	} else {
+		resourceExpire = 60
+	}
+
+	var poolMaxWait time.Duration
+	if c.PoolMaxWait() > 0 {
+		poolMaxWait = c.PoolMaxWait()
+	} else {
+		poolMaxWait = 50 * time.Second
+	}
+
+	var restartPolicy docker.RestartPolicy
+	if c.RestartPolicy() != restartPolicy {
+		restartPolicy = c.RestartPolicy()
+	} else {
+		restartPolicy = docker.RestartPolicy{
+			Name: "no",
+		}
+	}
+
+	var portBindings map[docker.Port][]docker.PortBinding
+	if len(c.PortBindings()) != 0 {
+		portBindings = c.PortBindings()
+	} else {
+		portBindings = map[docker.Port][]docker.PortBinding{
+			containerPortId: {{HostPort: hostPort}},
+		}
+	}
+
+	var cleanup func() error
+	if c.cleanup != nil {
+		cleanup = c.cleanup
+	} else {
+		cleanup = func() error { return nil }
+	}
+
+	dockerConfig := dockertestsetup.NewDockerConfig(
+		name,
+		repository,
+		tag,
+		env,
+		cmd,
+		entrypoint,
+		workingDir,
+		autoRemove,
+		resourceExpire,
+		poolMaxWait,
+		restartPolicy,
+		portBindings,
+		cleanup,
+		hostPort,
+		string(containerPortId),
+	)
+
+	c.DockerConfig = dockerConfig
 }
