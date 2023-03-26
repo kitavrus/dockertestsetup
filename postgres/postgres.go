@@ -6,7 +6,7 @@ import (
 	migrate "github.com/golang-migrate/migrate/v4"
 	migratepostgres "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	dockertestsetup "github.com/kitavrus/dockertestsetup"
+	dockertestsetup "github.com/kitavrus/dockertestsetup/v7"
 	_ "github.com/lib/pq"
 	dockertest "github.com/ory/dockertest/v3"
 	docker "github.com/ory/dockertest/v3/docker"

@@ -2,7 +2,7 @@ package minio
 
 import (
 	"fmt"
-	dockertestsetup "github.com/kitavrus/dockertestsetup"
+	dockertestsetup "github.com/kitavrus/dockertestsetup/v7"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 

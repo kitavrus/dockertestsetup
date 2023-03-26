@@ -3,7 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
-	dockertestsetup "github.com/kitavrus/dockertestsetup"
+	dockertestsetup "github.com/kitavrus/dockertestsetup/v7"
 	dockertest "github.com/ory/dockertest/v3"
 	docker "github.com/ory/dockertest/v3/docker"
 	"github.com/redis/go-redis/v9"
