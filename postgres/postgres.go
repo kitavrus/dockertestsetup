@@ -205,7 +205,7 @@ func (r *Resource) Pool() *dockertest.Pool {
 	return r.pool
 }
 func (r *Resource) Config() dockertestsetup.Config {
-	return r.config
+	return r.config.(*config)
 }
 
 func CfgPgUser(u string) dockertestsetup.Options {
