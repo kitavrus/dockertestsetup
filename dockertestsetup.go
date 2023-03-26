@@ -24,6 +24,8 @@ type Resource interface {
 }
 
 type DockerConfig interface {
+	Connect() (*dockertest.Resource, *dockertest.Pool, error)
+
 	Name() string
 	Repository() string
 	Tag() string

@@ -215,10 +215,11 @@ func CfgPortBindings(pb map[docker.Port][]docker.PortBinding) Options {
 	}
 }
 
-type Service struct {
-}
+//type Service struct {
+//}
+//func (dtf *Service) Connect(c DockerConfig) (*dockertest.Resource, *dockertest.Pool, error) {
 
-func (dtf *Service) Connect(c DockerConfig) (*dockertest.Resource, *dockertest.Pool, error) {
+func (c *DockerConfigImpl) Connect() (*dockertest.Resource, *dockertest.Pool, error) {
 	// uses a sensible default on windows (tcp/http) and linux/osx (socket)
 	pool, err := dockertest.NewPool("")
 
