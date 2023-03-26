@@ -57,13 +57,15 @@ func newDefaultConfig() dockertestsetup.Config {
 	)
 
 	return &config{
-		DockerConfig:  dockerConfig,
-		pgUser:        pgUser,
-		pgPassword:    pgPassword,
-		pDB:           pgDb,
-		pgSSLMode:     "disable",
-		withMigrate:   false,
-		pathToMigrate: pathToMigrate,
+		DockerConfig:      dockerConfig,
+		PgUser:            pgUser,
+		PgPassword:        pgPassword,
+		PgDB:              pgDb,
+		PgHostPort:        hostPort,
+		PgContainerPortId: containerPortId,
+		PgSSLMode:         "disable",
+		withMigrate:       false,
+		pathToMigrate:     pathToMigrate,
 	}
 }
 
@@ -97,16 +99,19 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		return con.resourceWithError(fmt.Errorf("%w", err))
 	}
 
-	resource.Expire(con.Config.ResourceExpire())
+	err = resource.Expire(con.Config.ResourceExpire())
+	if err != nil {
+		return con.resourceWithError(fmt.Errorf("%w", err))
+	}
 
 	dsn := &url.URL{
 		Scheme: "postgres",
-		User:   url.UserPassword(con.Config.(*config).pgUser, con.Config.(*config).pgPassword),
-		Path:   con.Config.(*config).pDB,
+		User:   url.UserPassword(con.Config.(*config).PgUser, con.Config.(*config).PgPassword),
+		Path:   con.Config.(*config).PgDB,
 	}
 
 	q := dsn.Query()
-	q.Add("sslmode", con.Config.(*config).pgSSLMode)
+	q.Add("sslmode", con.Config.(*config).PgSSLMode)
 
 	dsn.RawQuery = q.Encode()
 
@@ -166,6 +171,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		resource: resource,
 		cleanup:  con.Cleanup,
 		error:    nil,
+		config:   con.Config,
 	}
 }
 
@@ -176,6 +182,7 @@ type Resource struct {
 	pool     *dockertest.Pool
 	cleanup  func() error
 	error    error
+	config   dockertestsetup.Config
 }
 
 func (r *Resource) GetName() string {
@@ -197,28 +204,31 @@ func (r *Resource) Resource() *dockertest.Resource {
 func (r *Resource) Pool() *dockertest.Pool {
 	return r.pool
 }
+func (r *Resource) Config() dockertestsetup.Config {
+	return r.config
+}
 
 func CfgPgUser(u string) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
-		c.(*config).pgUser = u
+		c.(*config).PgUser = u
 	}
 }
 
 func CfgPgPassword(p string) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
-		c.(*config).pgPassword = p
+		c.(*config).PgPassword = p
 	}
 }
 
 func CfgPgDb(db string) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
-		c.(*config).pDB = db
+		c.(*config).PgDB = db
 	}
 }
 
 func CfgPgSSLMode(s string) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
-		c.(*config).pgSSLMode = s
+		c.(*config).PgSSLMode = s
 	}
 }
 
@@ -248,12 +258,12 @@ func (con *ContainerImpl) resourceWithError(err error) dockertestsetup.Resource 
 type config struct {
 	dockertestsetup.DockerConfig
 	dockertestsetup.CustomConfig
-	pgUser            string
-	pgPassword        string
-	pDB               string
-	pgSSLMode         string
-	pgHostPort        string
-	pgContainerPortId string
+	PgUser            string
+	PgPassword        string
+	PgDB              string
+	PgSSLMode         string
+	PgHostPort        string
+	PgContainerPortId string
 	pgDSN             string
 	withMigrate       bool
 	pathToMigrate     string

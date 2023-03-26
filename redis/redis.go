@@ -48,8 +48,8 @@ func newDefaultConfig() dockertestsetup.Config {
 
 	return &config{
 		DockerConfig:  dockerConfig,
-		redisPassword: redisPassword,
-		redisDB:       uint(db),
+		RedisPassword: redisPassword,
+		RedisDB:       uint(db),
 	}
 }
 
@@ -85,7 +85,10 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		return con.resourceWithError(fmt.Errorf("%w", err))
 	}
 
-	resource.Expire(con.Config.ResourceExpire())
+	err = resource.Expire(con.Config.ResourceExpire())
+	if err != nil {
+		return con.resourceWithError(fmt.Errorf("%w", err))
+	}
 
 	pool.MaxWait = con.Config.PoolMaxWait()
 	if err = pool.Retry(func() error {
@@ -115,6 +118,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		pool:     pool,
 		cleanup:  con.Cleanup,
 		error:    nil,
+		config:   con.Config,
 	}
 }
 
@@ -125,6 +129,7 @@ type Resource struct {
 	pool     *dockertest.Pool
 	cleanup  func() error
 	error    error
+	config   dockertestsetup.Config
 }
 
 func (r *Resource) GetName() string {
@@ -146,16 +151,19 @@ func (r *Resource) Resource() *dockertest.Resource {
 func (r *Resource) Pool() *dockertest.Pool {
 	return r.pool
 }
+func (r *Resource) Config() dockertestsetup.Config {
+	return r.config
+}
 
 func CfgRedisPassword(p string) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
-		c.(*config).redisPassword = p
+		c.(*config).RedisPassword = p
 	}
 }
 
 func CfgRedisDb(db uint) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
-		c.(*config).redisDB = db
+		c.(*config).RedisDB = db
 	}
 }
 
@@ -170,7 +178,7 @@ func (con *ContainerImpl) resourceWithError(err error) dockertestsetup.Resource 
 type config struct {
 	dockertestsetup.DockerConfig
 	dockertestsetup.CustomConfig
-	redisPassword string
-	redisDB       uint
+	RedisPassword string
+	RedisDB       uint
 	cleanup       func() error
 }

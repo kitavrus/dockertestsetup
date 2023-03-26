@@ -20,6 +20,7 @@ type Resource interface {
 	Cleanup() error
 	Resource() *dockertest.Resource
 	Pool() *dockertest.Pool
+	Config() Config
 }
 
 type DockerConfig interface {

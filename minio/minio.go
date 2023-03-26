@@ -19,6 +19,7 @@ func newDefaultConfig() dockertestsetup.Config {
 		tag             = "latest"
 		accessKey       = "MYACCESSKEY"
 		secretKey       = "MYSECRETKEY"
+		token           = ""
 		hostPort        = "9000"
 		containerPortId = "9000/tpc"
 	)
@@ -47,8 +48,9 @@ func newDefaultConfig() dockertestsetup.Config {
 
 	return &config{
 		DockerConfig: dockerConfig,
-		accessKey:    accessKey,
-		secretKey:    secretKey,
+		AccessKey:    accessKey,
+		SecretKey:    secretKey,
+		Token:        token,
 	}
 }
 
@@ -81,7 +83,10 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		return con.resourceWithError(fmt.Errorf("%w", err))
 	}
 
-	resource.Expire(con.Config.ResourceExpire())
+	err = resource.Expire(con.Config.ResourceExpire())
+	if err != nil {
+		return con.resourceWithError(fmt.Errorf("%w", err))
+	}
 
 	endpoint := fmt.Sprintf("localhost:%s", resource.GetPort(con.Config.ContainerPortId()))
 	// or you could use the following, because we mapped the port 9000 to the port 9000 on the host
@@ -105,7 +110,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 
 	// now we can instantiate minio client
 	minioClient, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4("MYACCESSKEY", "MYSECRETKEY", ""),
+		Creds:  credentials.NewStaticV4(con.Config.(*config).AccessKey, con.Config.(*config).SecretKey, con.Config.(*config).Token),
 		Secure: false,
 	})
 
@@ -116,7 +121,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 	con.Config.(*config).cleanup = func() error {
 		if resource != nil {
 			if err := pool.Purge(resource); err != nil {
-				return fmt.Errorf("Couldn't purge container: %w", err)
+				return fmt.Errorf("couldn't purge container: %w", err)
 			}
 		}
 		return nil
@@ -128,6 +133,7 @@ func (con *ContainerImpl) Up() dockertestsetup.Resource {
 		resource: resource,
 		cleanup:  con.Cleanup,
 		error:    nil,
+		config:   con.Config,
 	}
 }
 
@@ -138,6 +144,7 @@ type Resource struct {
 	pool     *dockertest.Pool
 	cleanup  func() error
 	error    error
+	config   dockertestsetup.Config
 }
 
 func (r *Resource) GetName() string {
@@ -160,10 +167,14 @@ func (r *Resource) Pool() *dockertest.Pool {
 	return r.pool
 }
 
+func (r *Resource) Config() dockertestsetup.Config {
+	return r.config
+}
+
 func AccessSecretKey(acc, sec string) dockertestsetup.Options {
 	return func(c dockertestsetup.Config) {
-		c.(*config).accessKey = acc
-		c.(*config).secretKey = sec
+		c.(*config).AccessKey = acc
+		c.(*config).SecretKey = sec
 	}
 }
 
@@ -178,7 +189,8 @@ func (con *ContainerImpl) resourceWithError(err error) dockertestsetup.Resource 
 type config struct {
 	dockertestsetup.DockerConfig
 	dockertestsetup.CustomConfig
-	accessKey string
-	secretKey string
+	AccessKey string
+	SecretKey string
+	Token     string
 	cleanup   func() error
 }
